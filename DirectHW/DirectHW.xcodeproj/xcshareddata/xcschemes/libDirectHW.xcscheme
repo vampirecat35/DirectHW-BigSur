@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AB83952225B4B678001D8E16"
-               BuildableName = "liblibDirectHW.a"
+               BuildableName = "libDirectHW.a"
                BlueprintName = "libDirectHW"
                ReferencedContainer = "container:DirectHW.xcodeproj">
             </BuildableReference>
@@ -51,7 +51,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AB83952225B4B678001D8E16"
-            BuildableName = "liblibDirectHW.a"
+            BuildableName = "libDirectHW.a"
             BlueprintName = "libDirectHW"
             ReferencedContainer = "container:DirectHW.xcodeproj">
          </BuildableReference>

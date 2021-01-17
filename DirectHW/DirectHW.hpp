@@ -26,9 +26,7 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <architecture/i386/pio.h>
-#elif defined(__arm__) || defined(__arm64__)
-#include <architecture/arm/pio.h>
-#endif /* __i386__ || __x86_64__ || __arm__ || __arm64__ */
+#endif /* __i386__ || __x86_64__ */
 
 #ifndef DIRECTHW_VERSION
 #define DIRECTHW_VERSION "1.4"
@@ -137,28 +135,55 @@ protected:
 	DirectHWService *fProvider;
 
 	static const IOExternalMethod fMethods[kNumberOfMethods];
+    static const IOExternalAsyncMethod fAsyncMethods[kNumberOfMethods];
 
 	virtual IOExternalMethod *getTargetAndMethodForIndex(LIBKERN_RETURNS_NOT_RETAINED IOService ** target, UInt32 index) APPLE_KEXT_OVERRIDE;
+    virtual IOExternalAsyncMethod *getAsyncTargetAndMethodForIndex(LIBKERN_RETURNS_NOT_RETAINED IOService ** target, UInt32 index) APPLE_KEXT_OVERRIDE;
 
 	virtual IOReturn ReadIO(iomem_t *inStruct, iomem_t *outStruct,
                             IOByteCount inStructSize,
                             IOByteCount *outStructSize);
 
+    virtual IOReturn ReadIOAsync(OSAsyncReference asyncRef,
+                                 iomem_t *inStruct, iomem_t *outStruct,
+                                 IOByteCount inStructSize,
+                                 IOByteCount *outStructSize);
+
 	virtual IOReturn WriteIO(iomem_t *inStruct, iomem_t *outStruct,
                              IOByteCount inStructSize,
                              IOByteCount *outStructSize);
+
+    virtual IOReturn WriteIOAsync(OSAsyncReference asyncRef,
+                                  iomem_t *inStruct, iomem_t *outStruct,
+                                  IOByteCount inStructSize,
+                                  IOByteCount *outStructSize);
 
 	virtual IOReturn PrepareMap(map_t *inStruct, map_t *outStruct,
                                 IOByteCount inStructSize,
                                 IOByteCount *outStructSize);
 
+    virtual IOReturn PrepareMapAsync(OSAsyncReference asyncRef,
+                                     map_t *inStruct, map_t *outStruct,
+                                     IOByteCount inStructSize,
+                                     IOByteCount *outStructSize);
+
 	virtual IOReturn ReadMSR(msrcmd_t *inStruct, msrcmd_t *outStruct,
                              IOByteCount inStructSize,
                              IOByteCount *outStructSize);
 
+    virtual IOReturn ReadMSRAsync(OSAsyncReference asyncRef,
+                                  msrcmd_t *inStruct, msrcmd_t *outStruct,
+                                  IOByteCount inStructSize,
+                                  IOByteCount *outStructSize);
+    
 	virtual IOReturn WriteMSR(msrcmd_t *inStruct, msrcmd_t *outStruct,
                               IOByteCount inStructSize,
                               IOByteCount *outStructSize);
+
+    virtual IOReturn WriteMSRAsync(OSAsyncReference asyncRef,
+                                   msrcmd_t *inStruct, msrcmd_t *outStruct,
+                                   IOByteCount inStructSize,
+                                   IOByteCount *outStructSize);
 
 private:
 	task_t fTask;
@@ -176,8 +201,8 @@ private:
 	static inline void cpuid(uint32_t op1, uint32_t op2, uint32_t *data);
 };
 
-extern "C" {
-
+extern "C"
+{
     /* from sys/osfmk/i386/mp.c */
     extern void mp_rendezvous(void (*setup_func)(void *),
                               void (*action_func)(void *),

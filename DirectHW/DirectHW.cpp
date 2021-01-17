@@ -45,6 +45,15 @@ bool DirectHWService::start(IOService * provider)
 
 OSDefineMetaClassAndStructors(DirectHWUserClient, IOUserClient)
 
+const IOExternalAsyncMethod DirectHWUserClient::fAsyncMethods[kNumberOfMethods] =
+{
+    {0, (IOAsyncMethod) & DirectHWUserClient::ReadIOAsync, kIOUCStructIStructO, sizeof(iomem_t), sizeof(iomem_t)},
+    {0, (IOAsyncMethod) & DirectHWUserClient::WriteIOAsync, kIOUCStructIStructO, sizeof(iomem_t), sizeof(iomem_t)},
+    {0, (IOAsyncMethod) & DirectHWUserClient::PrepareMapAsync, kIOUCStructIStructO, sizeof(map_t), sizeof(map_t)},
+    {0, (IOAsyncMethod) & DirectHWUserClient::ReadMSRAsync, kIOUCStructIStructO, sizeof(msrcmd_t), sizeof(msrcmd_t)},
+    {0, (IOAsyncMethod) & DirectHWUserClient::WriteMSRAsync, kIOUCStructIStructO, sizeof(msrcmd_t), sizeof(msrcmd_t)}
+};
+
 const IOExternalMethod DirectHWUserClient::fMethods[kNumberOfMethods] =
 {
 	{0, (IOMethod) & DirectHWUserClient::ReadIO, kIOUCStructIStructO, sizeof(iomem_t), sizeof(iomem_t)},
@@ -76,11 +85,40 @@ bool DirectHWUserClient::initWithTask(task_t task, void *securityID, UInt32 type
 	return ret;
 }
 
+IOExternalAsyncMethod *DirectHWUserClient::getAsyncTargetAndMethodForIndex(IOService ** target, UInt32 index)
+{
+    if (target == NULL)
+    {
+        return NULL;
+    }
+
+    if (index < (UInt32) kNumberOfMethods)
+    {
+        if (fAsyncMethods[index].object == (IOService *) 0)
+        {
+            *target = this;
+        }
+
+        return (IOExternalAsyncMethod *) & fAsyncMethods[index];
+    }
+
+    *target = NULL;
+    return NULL;
+}
+
 IOExternalMethod *DirectHWUserClient::getTargetAndMethodForIndex(IOService ** target, UInt32 index)
 {
-	if (index < (UInt32) kNumberOfMethods) {
+    if (target == NULL)
+    {
+        return NULL;
+    }
+
+	if (index < (UInt32) kNumberOfMethods)
+    {
 		if (fMethods[index].object == (IOService *) 0)
+        {
 			*target = this;
+        }
 
 		return (IOExternalMethod *) & fMethods[index];
 	}
@@ -141,9 +179,20 @@ IOReturn DirectHWUserClient::clientClose(void)
 }
 
 IOReturn
+DirectHWUserClient::ReadIOAsync(OSAsyncReference asyncRef,
+                                iomem_t *inStruct, iomem_t *outStruct,
+                                IOByteCount inStructSize,
+                                IOByteCount *outStructSize)
+{
+    ((void)asyncRef);
+
+    return DirectHWUserClient::ReadIO(inStruct, outStruct, inStructSize, outStructSize);
+}
+
+IOReturn
 DirectHWUserClient::ReadIO(iomem_t *inStruct, iomem_t *outStruct,
-				IOByteCount inStructSize,
-				IOByteCount *outStructSize)
+                           IOByteCount inStructSize,
+                           IOByteCount *outStructSize)
 {
     ((void)inStructSize);
 
@@ -191,6 +240,15 @@ DirectHWUserClient::ReadIO(iomem_t *inStruct, iomem_t *outStruct,
 	return kIOReturnSuccess;
 }
 
+IOReturn
+DirectHWUserClient::WriteIOAsync(OSAsyncReference asyncRef, iomem_t *inStruct, iomem_t *outStruct,
+                                 IOByteCount inStructSize,
+                                 IOByteCount *outStructSize)
+{
+    ((void)asyncRef);
+
+    return DirectHWUserClient::WriteIO(inStruct, outStruct, inStructSize, outStructSize);
+}
 
 IOReturn
 DirectHWUserClient::WriteIO(iomem_t *inStruct, iomem_t *outStruct,
@@ -246,6 +304,16 @@ DirectHWUserClient::WriteIO(iomem_t *inStruct, iomem_t *outStruct,
 	return kIOReturnSuccess;
 }
 
+IOReturn
+DirectHWUserClient::PrepareMapAsync(OSAsyncReference asyncRef,
+                                    map_t *inStruct, map_t *outStruct,
+                                    IOByteCount inStructSize,
+                                    IOByteCount *outStructSize)
+{
+    ((void)asyncRef);
+
+    return PrepareMap(inStruct, outStruct, inStructSize, outStructSize);
+}
 
 IOReturn
 DirectHWUserClient::PrepareMap(map_t *inStruct, map_t *outStruct,
@@ -377,6 +445,17 @@ DirectHWUserClient::MSRHelperFunction(void *data)
 }
 
 IOReturn
+DirectHWUserClient::ReadMSRAsync(OSAsyncReference asyncRef,
+                                 msrcmd_t *inStruct, msrcmd_t *outStruct,
+                                 IOByteCount inStructSize,
+                                 IOByteCount *outStructSize)
+{
+    ((void)asyncRef);
+
+    return DirectHWUserClient::ReadMSR(inStruct, outStruct, inStructSize, outStructSize);
+}
+
+IOReturn
 DirectHWUserClient::ReadMSR(msrcmd_t *inStruct, msrcmd_t *outStruct,
                             IOByteCount inStructSize,
                             IOByteCount *outStructSize)
@@ -412,6 +491,17 @@ DirectHWUserClient::ReadMSR(msrcmd_t *inStruct, msrcmd_t *outStruct,
 #endif /* DEBUG_KEXT */
 
 	return kIOReturnSuccess;
+}
+
+IOReturn
+DirectHWUserClient::WriteMSRAsync(OSAsyncReference asyncRef,
+                                  msrcmd_t *inStruct, msrcmd_t *outStruct,
+                                  IOByteCount inStructSize,
+                                  IOByteCount *outStructSize)
+{
+    ((void)asyncRef);
+
+    return DirectHWUserClient::WriteMSR(inStruct, outStruct, inStructSize, outStructSize);
 }
 
 IOReturn
