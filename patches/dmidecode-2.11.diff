@@ -1,0 +1,212 @@
+Port dmidecode package to Mac OS X using DirectHW:
+http://www.coreboot.org/DirectHW
+
+Signed-off-by: Stefan Reinauer <stefan.reinauer@coreboot.org>
+
+Index: dmidecode-2.11/biosdecode.c
+===================================================================
+--- dmidecode-2.11/biosdecode.c
++++ dmidecode-2.11/biosdecode.c
+@@ -560,9 +560,15 @@
+ static int parse_command_line(int argc, char * const argv[])
+ {
+ 	int option;
++#ifndef __APPLE__
+ 	const char *optstring = "d:hV";
++#else
++	const char *optstring = "hV";
++#endif
+ 	struct option longopts[] = {
++#ifndef __APPLE__
+ 		{ "dev-mem", required_argument, NULL, 'd' },
++#endif
+ 		{ "help", no_argument, NULL, 'h' },
+ 		{ "version", no_argument, NULL, 'V' },
+ 		{ 0, 0, 0, 0 }
+@@ -571,9 +577,11 @@
+ 	while ((option = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+ 		switch (option)
+ 		{
++#ifndef __APPLE__
+ 			case 'd':
+ 				opt.devmem = optarg;
+ 				break;
++#endif
+ 			case 'h':
+ 				opt.flags |= FLAG_HELP;
+ 				break;
+@@ -592,7 +600,9 @@
+ 	static const char *help =
+ 		"Usage: biosdecode [OPTIONS]\n"
+ 		"Options are:\n"
++#ifndef __APPLE__
+ 		" -d, --dev-mem FILE     Read memory from device FILE (default: " DEFAULT_MEM_DEV ")\n"
++#endif
+ 		" -h, --help             Display this help text and exit\n"
+ 		" -V, --version          Display the version and exit\n";
+ 
+Index: dmidecode-2.11/config.h
+===================================================================
+--- dmidecode-2.11/config.h
++++ dmidecode-2.11/config.h
+@@ -12,9 +12,13 @@
+ #ifdef __sun
+ #define DEFAULT_MEM_DEV "/dev/xsvc"
+ #else
++#ifdef __APPLE__
++#define DEFAULT_MEM_DEV "DirectHW"
++#else
+ #define DEFAULT_MEM_DEV "/dev/mem"
+ #endif
+ #endif
++#endif
+ 
+ /* Use mmap or not */
+ #ifndef __BEOS__
+Index: dmidecode-2.11/vpdopt.c
+===================================================================
+--- dmidecode-2.11/vpdopt.c
++++ dmidecode-2.11/vpdopt.c
+@@ -92,9 +92,15 @@
+ int parse_command_line(int argc, char * const argv[])
+ {
+ 	int option;
++#ifndef __APPLE__
+ 	const char *optstring = "d:hs:uV";
++#else
++	const char *optstring = "hs:uV";
++#endif
+ 	struct option longopts[] = {
++#ifndef __APPLE__
+ 		{ "dev-mem", required_argument, NULL, 'd' },
++#endif
+ 		{ "help", no_argument, NULL, 'h' },
+ 		{ "string", required_argument, NULL, 's' },
+ 		{ "dump", no_argument, NULL, 'u' },
+@@ -105,9 +111,11 @@
+ 	while ((option = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+ 		switch (option)
+ 		{
++#ifndef __APPLE__
+ 			case 'd':
+ 				opt.devmem = optarg;
+ 				break;
++#endif
+ 			case 'h':
+ 				opt.flags |= FLAG_HELP;
+ 				break;
+@@ -147,7 +155,9 @@
+ 	static const char *help =
+ 		"Usage: vpddecode [OPTIONS]\n"
+ 		"Options are:\n"
++#ifndef __APPLE__
+ 		" -d, --dev-mem FILE     Read memory from device FILE (default: " DEFAULT_MEM_DEV ")\n"
++#endif
+ 		" -h, --help             Display this help text and exit\n"
+ 		" -s, --string KEYWORD   Only display the value of the given VPD string\n"
+ 		" -u, --dump             Do not decode the VPD records\n"
+Index: dmidecode-2.11/util.c
+===================================================================
+--- dmidecode-2.11/util.c
++++ dmidecode-2.11/util.c
+@@ -47,6 +47,10 @@
+ #include "types.h"
+ #include "util.h"
+ 
++#ifdef __APPLE__
++#include <DirectHW/DirectHW.h>
++#endif
++
+ static int myread(int fd, u8 *buf, size_t count, const char *prefix)
+ {
+ 	ssize_t r = 1;
+@@ -95,6 +99,7 @@
+ void *mem_chunk(size_t base, size_t len, const char *devmem)
+ {
+ 	void *p;
++#ifndef __APPLE__
+ 	int fd;
+ #ifdef USE_MMAP
+ 	size_t mmoffset;
+@@ -158,7 +163,23 @@
+ out:
+ 	if (close(fd) == -1)
+ 		perror(devmem);
++#else
++	void *v;
++	iopl(3);
++	if((v=map_physical(base, len))==NULL)
++	{
++		perror("map_physical");
++		return NULL;
++	}
+ 
++	if((p=malloc(len))==NULL)
++	{
++		perror("malloc");
++		return NULL;
++	}
++	memcpy(p, v, len);
++	unmap_physical(v, len);
++#endif
+ 	return p;
+ }
+ 
+Index: dmidecode-2.11/ownership.c
+===================================================================
+--- dmidecode-2.11/ownership.c
++++ dmidecode-2.11/ownership.c
+@@ -114,9 +114,15 @@
+ static int parse_command_line(int argc, char * const argv[])
+ {
+ 	int option;
++#ifndef __APPLE__
+ 	const char *optstring = "d:hV";
++#else
++	const char *optstring = "hV";
++#endif
+ 	struct option longopts[] = {
++#ifndef __APPLE__
+ 		{ "dev-mem", required_argument, NULL, 'd' },
++#endif
+ 		{ "help", no_argument, NULL, 'h' },
+ 		{ "version", no_argument, NULL, 'V' },
+ 		{ 0, 0, 0, 0 }
+@@ -125,9 +131,11 @@
+ 	while ((option = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+ 		switch (option)
+ 		{
++#ifndef __APPLE__
+ 			case 'd':
+ 				opt.devmem = optarg;
+ 				break;
++#endif
+ 			case 'h':
+ 				opt.flags |= FLAG_HELP;
+ 				break;
+@@ -146,7 +154,9 @@
+ 	static const char *help =
+ 		"Usage: ownership [OPTIONS]\n"
+ 		"Options are:\n"
++#ifndef __APPLE__
+ 		" -d, --dev-mem FILE     Read memory from device FILE (default: " DEFAULT_MEM_DEV ")\n"
++#endif
+ 		" -h, --help             Display this help text and exit\n"
+ 		" -V, --version          Display the version and exit\n";
+ 
+Index: dmidecode-2.11/Makefile
+===================================================================
+--- dmidecode-2.11/Makefile
++++ dmidecode-2.11/Makefile
+@@ -25,6 +25,11 @@
+ # Pass linker flags here
+ LDFLAGS =
+ 
++OS_ARCH = $(shell uname)
++ifeq ($(OS_ARCH), Darwin)
++LDFLAGS += -framework IOKit -framework DirectHW
++endif
++
+ DESTDIR =
+ prefix  = /usr/local
+ sbindir = $(prefix)/sbin

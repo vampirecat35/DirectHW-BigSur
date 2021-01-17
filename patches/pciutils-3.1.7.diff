@@ -1,0 +1,194 @@
+Port pciutils to Mac OS X using DirectHW:
+http://www.coreboot.org/DirectHW
+
+Signed-off-by: Stefan Reinauer <stefan.reinauer@coreboot.org>
+
+Index: pciutils-3.1.7/osx/Welcome.rtf
+===================================================================
+--- pciutils-3.1.7/osx/Welcome.rtf
++++ pciutils-3.1.7/osx/Welcome.rtf
+@@ -0,0 +1,20 @@
++{\rtf1\ansi\ansicpg1252\cocoartf949\cocoasubrtf540
++{\fonttbl\f0\fnil\fcharset0 LucidaGrande;}
++{\colortbl;\red255\green255\blue255;\red128\green128\blue128;}
++\paperw11900\paperh16840\margl1440\margr1440\vieww9000\viewh8400\viewkind0
++\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
++
++\f0\b\fs26 \cf2 Welcome to PCI Utilities\
++\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl120\slmult1\ql\qnatural\pardirnatural
++
++\b0 \cf2 \
++\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
++\cf2 This package contains the PCI Utilities, version 3.1.7.\
++\
++Copyright (c) 1997--2010 Martin Mares <mj@ucw.cz>\
++\
++The PCI Utilities package contains a library for portable access to PCI bus configuration registers and several utilities based on this library.\
++\
++You also might want to look at the pciutils web page containing release notes and other news: http://mj.ucw.cz/pciutils.shtml .\
++\
++You will now be guided through the steps necessary to install this software.}
+Index: pciutils-3.1.7/osx/pciutils.pmdoc/01root.xml
+===================================================================
+--- pciutils-3.1.7/osx/pciutils.pmdoc/01root.xml
++++ pciutils-3.1.7/osx/pciutils.pmdoc/01root.xml
+@@ -0,0 +1,24 @@
++<pkgref spec="1.12" uuid="94522C23-7BEF-4761-8AA3-4FE2E2784DB7">
++    <config>
++        <identifier>com.pciutils.pciutils.pkg</identifier>
++	<version>1</version>
++	<description></description>
++	<post-install type="none"/>
++        <requireAuthorization/>
++        <installFrom relative="true" mod="true">../root/</installFrom>
++        <flags>
++            <followSymbolicLinks/>
++        </flags>
++        <packageStore type="internal"></packageStore>
++	<mod>parent</mod>
++	<mod>installFrom.path</mod>
++	<mod>identifier</mod>
++    </config>
++    <contents>
++	<filter>/CVS$</filter>
++	<filter>/\.svn$</filter>
++	<filter>/\.cvsignore$</filter>
++	<filter>/\.cvspass$</filter>
++	<filter>/\.DS_Store$</filter>
++    </contents>
++</pkgref>
+Index: pciutils-3.1.7/osx/pciutils.pmdoc/index.xml
+===================================================================
+--- pciutils-3.1.7/osx/pciutils.pmdoc/index.xml
++++ pciutils-3.1.7/osx/pciutils.pmdoc/index.xml
+@@ -0,0 +1,53 @@
++<pkmkdoc spec="1.12">
++    <properties>
++        <title>PCI Utilities</title>
++	<build>pciutils.pkg</build>
++	<organization>com.pciutils</organization>
++	<userSees ui="easy"/>
++        <min-target os="2"/>
++        <domain system="true"/>
++    </properties>
++    <distribution>
++        <versions min-spec="1.000000"/><scripts>
++            function CheckHardwareCompatibility() {
++            if (system.sysctl('hw.machine') == 'i386') {
++            return true;
++            }
++            
++            if (system.sysctl('hw.machine') == 'x86_64') {
++            return true;
++            }
++            
++            return false;
++            }
++        </scripts>
++    </distribution>
++    <description>The PCI Utilities package contains a library for portable access to PCI bus configuration registers and several utilities based on this library.
++    </description>
++    <contents>
++        <choice title="PCI Utilities" id="choice0" starts_selected="true" starts_enabled="true" starts_hidden="false">
++            <pkgref id="com.pciutils.pciutils.pkg"/>
++        </choice>
++    </contents>
++    <resources bg-scale="none" bg-align="bottomleft">
++        <locale lang="en">
++	    <resource relative="true" mod="true" type="license">../COPYING</resource>
++	    <resource relative="true" mod="true" type="welcome">Welcome.rtf</resource>
++        </locale>
++    </resources>
++    <requirements>
++        <requirement id="java" operator="eq" value="true">
++            <argument>CheckHardwareCompatibility()</argument>
++	    <message-title>Unsupported Architecture</message-title>
++	    <message>PCI utilities are only supported on Intel® based Apple systems.</message>
++        </requirement>
++    </requirements>
++    <flags/>
++    <item type="file">01root.xml</item>
++    <mod>properties.userDomain</mod>
++    <mod>properties.systemDomain</mod>
++    <mod>properties.anywhereDomain</mod>
++    <mod>properties.title</mod>
++    <mod>description</mod>
++    <mod>postinstallActions.actions</mod>
++</pkmkdoc>
+Index: pciutils-3.1.7/lib/i386-io-darwin.h
+===================================================================
+--- pciutils-3.1.7/lib/i386-io-darwin.h
++++ pciutils-3.1.7/lib/i386-io-darwin.h
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (C) 2008-2010 coresystems GmbH
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
++ */
++
++#include <DirectHW/DirectHW.h>
++
++static int intel_setup_io(struct pci_access *a __attribute__((unused)))
++{
++	return !iopl(0);
++}
++
++static int intel_cleanup_io(struct pci_access *a __attribute__((unused)))
++{
++	return 1;
++}
++
+Index: pciutils-3.1.7/lib/configure
+===================================================================
+--- pciutils-3.1.7/lib/configure
++++ pciutils-3.1.7/lib/configure
+@@ -8,9 +8,9 @@
+ echo_n() {
+ 	if [ -n "$BASH" ]
+ 	then
+-		echo -n "$*"
++		/bin/echo -n "$*"
+ 	else
+-		echo "$*\c"
++		/bin/echo "$*\c"
+ 	fi
+ }
+ 
+@@ -124,6 +124,12 @@
+ 		echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
+ 		echo >>$m 'WITH_LIBS+=-lioperm'
+ 		;;
++	darwin)
++		echo_n " i386-ports"
++		echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
++		echo >>$c '#define PCI_HAVE_64BIT_ADDRESS'
++		echo >>$m 'WITH_LIBS+=-framework DirectHW'
++		;;
+         *)
+ 		echo " Unfortunately, your OS is not supported by the PCI Library"
+ 		exit 1
+Index: pciutils-3.1.7/lib/i386-ports.c
+===================================================================
+--- pciutils-3.1.7/lib/i386-ports.c
++++ pciutils-3.1.7/lib/i386-ports.c
+@@ -22,6 +22,8 @@
+ #include "i386-io-windows.h"
+ #elif defined(PCI_OS_CYGWIN)
+ #include "i386-io-cygwin.h"
++#elif defined(PCI_OS_DARWIN)
++#include "i386-io-darwin.h"
+ #else
+ #error Do not know how to access I/O ports on this OS.
+ #endif
