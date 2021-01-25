@@ -45,6 +45,10 @@
 #endif /* APPLE_KEXT_OVERRIDE */
 /* */
 
+#ifndef LIBKERN_RETURNS_NOT_RETAINED
+#define LIBKERN_RETURNS_NOT_RETAINED
+#endif /* LIBKERN_RETURNS_NOT_RETAINED */
+
 #ifndef rdmsr
 #define rdmsr(msr, lo, hi) \
     __asm__ volatile("rdmsr" : "=a" (lo), "=d" (hi) : "c" (msr))
